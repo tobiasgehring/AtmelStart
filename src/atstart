@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+from makefile import Makefile
+
+ATMEL_START_DIR_NAME = 'atstart'
+
+parser = argparse.ArgumentParser(description='Atmel Start project tool')
+parser.add_argument('action', choices=['cmake', 'pull', 'init'])
+args = parser.parse_args()
+
+current_dir = os.getcwd()
+
+if args.action == 'cmake':
+    # cmake
+    # find atstart directory
+    atstart_dir = os.path.join(current_dir, ATMEL_START_DIR_NAME)
+    if not os.path.exists(atstart_dir):
+        print('Error: Could not find atmel start project directory "atstart".')
+        exit(-1)
+    makefile_filename = os.path.join(atstart_dir, 'gcc', 'Makefile')
+    if not os.path.exists(makefile_filename):
+        print('Error: Could not find Makefile: {0}'.format(makefile_filename))
+        exit(-1)
+    Makefile.write_cmake_toolchain(makefile_filename, os.path.join(atstart_dir, 'toolchain.cmake'))
+elif args.action == 'pull':
+    pass
+elif args.action == 'init':
+    pass
