@@ -2,18 +2,36 @@
 
 import argparse
 import os
-from makefile import Makefile
+import shutil
+from AtmelStart.makefile import Makefile
+import AtmelStart.project as project
 
 ATMEL_START_DIR_NAME = 'atstart'
+ATMEL_START_CONFIG_FILENAME = 'atmel_start_config.atstart'
 
+# argument parser
 parser = argparse.ArgumentParser(description='Atmel Start project tool')
-parser.add_argument('action', choices=['cmake', 'pull', 'init'])
+parser.add_argument('action', choices=['init', 'pull', 'cmake'])
 args = parser.parse_args()
 
 current_dir = os.getcwd()
 
-if args.action == 'cmake':
-    # cmake
+
+def init():
+    project.init(current_dir, 'TODO Project Name')
+
+
+def pull():
+    # check if configuration file exists
+    atmel_start_config_filename = os.path.join(current_dir, ATMEL_START_CONFIG_FILENAME)
+    atstart_dirname = os.path.join(current_dir, ATMEL_START_DIR_NAME)
+    if not os.path.isfile(atmel_start_config_filename):
+        print('Error: Could not file atmel start configuration file: {0}'.format(atmel_start_config_filename))
+        exit(-1)
+    project.retrieve_and_replace_project(atmel_start_config_filename, atstart_dirname)
+
+
+def cmake():
     # find atstart directory
     atstart_dir = os.path.join(current_dir, ATMEL_START_DIR_NAME)
     if not os.path.exists(atstart_dir):
@@ -24,7 +42,13 @@ if args.action == 'cmake':
         print('Error: Could not find Makefile: {0}'.format(makefile_filename))
         exit(-1)
     Makefile.write_cmake_toolchain(makefile_filename, os.path.join(atstart_dir, 'toolchain.cmake'))
-elif args.action == 'pull':
-    pass
-elif args.action == 'init':
-    pass
+
+
+if args.action == 'init':
+    init()
+elif args.action == 'pull':  # pull
+    pull()
+    cmake()
+elif args.action == 'cmake':  # cmake
+    cmake()
+

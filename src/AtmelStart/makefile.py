@@ -72,7 +72,7 @@ class Makefile:
         :return: str the cmake toolchain script
         """
         # Read Template
-        with open(os.path.join(os.path.dirname(__file__), 'templates/toolchain.cmake'), 'r') as file:
+        with open(os.path.join(os.path.dirname(__file__), '../templates/toolchain.cmake'), 'r') as file:
             content = file.read()
         template = Template(content)
         return template.render(
