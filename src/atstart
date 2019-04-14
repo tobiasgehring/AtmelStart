@@ -2,45 +2,92 @@
 
 import argparse
 import os
-import shutil
+import sys
+import logging
 from AtmelStart.makefile import Makefile
 import AtmelStart.project as project
 
 ATMEL_START_DIR_NAME = 'atstart'
 ATMEL_START_CONFIG_FILENAME = 'atmel_start_config.atstart'
 
-
 current_dir = os.getcwd()
+
+# Logging facility
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(stream=sys.stdout)
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 def init(args):
+    """
+    Init command
+
+    :param args: parsed commandline arguments
+    :return:
+    """
     project.init(current_dir, args.name)
 
 
 def generate(args):
+    """
+    Generate command
+
+    :param args: parsed commandline arguments
+    :return:
+    """
+    logger = logging.getLogger(__name__)
     # check if configuration file exists
     atmel_start_config_filename = os.path.join(current_dir, ATMEL_START_CONFIG_FILENAME)
     atstart_dirname = os.path.join(current_dir, ATMEL_START_DIR_NAME)
     if not os.path.isfile(atmel_start_config_filename):
-        print('Error: Could not file atmel start configuration file: {0}'.format(atmel_start_config_filename))
+        logger.error('Error: Could not file atmel start configuration file: {0}'.format(atmel_start_config_filename))
         exit(-1)
-    project.retrieve_and_replace_project(atmel_start_config_filename, atstart_dirname)
+    else:
+        logging.info('Found configuration file: {0}'.format(atmel_start_config_filename))
+    try:
+        project.retrieve_and_replace_project(atmel_start_config_filename, atstart_dirname)
+    except Exception as e:
+        logger.error('Error: {0}.'.format(str(e)))
+    logger.info('Successfully updated atmel start project.')
+
 
 
 def cmake(args):
-    # find atstart directory
+    """
+    cmake command
+
+    :param args: parsed commandline arguments
+    :return:
+    """
+    # find atstart directory, check for Makefile
     atstart_dir = os.path.join(current_dir, ATMEL_START_DIR_NAME)
     if not os.path.exists(atstart_dir):
-        print('Error: Could not find atmel start project directory "atstart".')
+        logging.error('Error: Could not find atmel start project directory "atstart".')
         exit(-1)
+    else:
+        logging.info('Found atmel start project directory: {0}'.format(atstart_dir))
     makefile_filename = os.path.join(atstart_dir, 'gcc', 'Makefile')
     if not os.path.exists(makefile_filename):
-        print('Error: Could not find Makefile: {0}'.format(makefile_filename))
+        logging.error('Error: Could not find Makefile: {0}'.format(makefile_filename))
         exit(-1)
+    else:
+        logging.info('Found Makefile: {0}'.format(makefile_filename))
+    logging.info('Generating cmake toolchain script...')
     Makefile.write_cmake_toolchain(makefile_filename, os.path.join(atstart_dir, 'toolchain.cmake'))
+    logging.info('Successfully generated cmake toolchain script.')
 
 
 def pull(args):
+    """
+    Pull command
+
+    :param args: parsed commandline arguments
+    :return:
+    """
     generate(args)
     cmake(args)
 
@@ -63,4 +110,7 @@ parser_pull.set_defaults(func=pull)
 # create parser for cmake command
 parser_cmake = subparsers.add_parser('cmake', help='creates cmake toolchain script for atmel start project')
 parser_cmake.set_defaults(func=cmake)
+
+# parse
 args = parser.parse_args()
+args.func(args)

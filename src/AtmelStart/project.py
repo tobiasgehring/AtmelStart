@@ -4,6 +4,8 @@ import os
 import shutil
 from jinja2 import Template
 from zipfile import ZipFile
+import logging
+import webbrowser
 
 # Name of src directory
 SRC_DIR = 'src'
@@ -23,6 +25,14 @@ _URL_GENERATE = _URL_API_v1 + 'generate/?format=atzip&compilers=[atmel_studio,ma
 
 
 def init(project_directory, project_name):
+    """
+    Initializes a project.
+
+    It creates a src/ directory, generates a CMakeLists.txt for cmake and
+    :param project_directory: The directory that shall be used for the project
+    :param project_name: the project name
+    :return:
+    """
     # make src directory
     src_dirname = os.path.join(project_directory, SRC_DIR)
     if not os.path.isdir(src_dirname):
@@ -39,6 +49,15 @@ def init(project_directory, project_name):
     cmakelists = template.render(project_name=project_name)
     with open(os.path.join(cmakelists_filename), 'w') as file:
         file.write(cmakelists)
+
+
+def edit(atmel_start_config_filename):
+    """
+
+    :param atmel_start_config_filename:
+    :return:
+    """
+    pass
 
 
 def _request_json(atmel_start_config_filename):
@@ -66,6 +85,8 @@ def generate(atmel_start_config_filename, file):
     :param file: open file descriptor to where the project zip file is written to
     :return:
     """
+    logger = logging.getLogger(__name__)
+    logger.info('Generating atmel start project from configuration file...')
     config_json = _request_json(atmel_start_config_filename)
     response = requests.post(_URL_GENERATE, json=config_json)
     if response.status_code != 200:
@@ -99,11 +120,14 @@ def retrieve_and_replace_project(atmel_start_config_filename, atmel_start_projec
     :return:
     """
     # generate project file from configuration and extract it into the atmel start project directory
+    logger = logging.getLogger(__name__)
     with tempfile.TemporaryFile() as file:
         generate(atmel_start_config_filename, file)
         # remove all contents of the atmel start project directory if it exists
+        logger.info('Removing old project files...')
         if os.path.isdir(atmel_start_project_directory):
             shutil.rmtree(atmel_start_project_directory)
-        os.mkdir(atmel_start_project_directory)
         # extract files
+        logging.info('Extracting new project files...')
+        os.mkdir(atmel_start_project_directory)
         extract_zip_file(file, atmel_start_project_directory)
