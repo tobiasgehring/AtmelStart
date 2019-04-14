@@ -9,6 +9,7 @@ import AtmelStart.project as project
 
 ATMEL_START_DIR_NAME = 'atstart'
 ATMEL_START_CONFIG_FILENAME = 'atmel_start_config.atstart'
+BUILD_DIR = 'build'
 
 current_dir = os.getcwd()
 
@@ -81,15 +82,34 @@ def cmake(args):
     logging.info('Successfully generated cmake toolchain script.')
 
 
-def pull(args):
+def reconfigure(args):
     """
-    Pull command
+    Reconfigure command
 
     :param args: parsed commandline arguments
     :return:
     """
     generate(args)
     cmake(args)
+
+
+def build(args):
+    # check that we are in the project root directory
+    cmakelists_filename = os.path.join(current_dir, 'CMakeLists.txt')
+    if not os.path.isfile(cmakelists_filename):
+        logging.error('Could not find CMakeLists.txt: {0}'.format(cmakelists_filename))
+        exit(-1)
+
+    build_dirname = os.path.join(current_dir, BUILD_DIR)
+    if not os.path.isdir(build_dirname):
+        logging.info('Creating build directory: {0}'.format(build_dirname))
+        os.mkdir(build_dirname)
+    try:
+        os.chdir(build_dirname)
+        os.system('cmake ..')
+        os.system('make')
+    finally:
+        os.chdir(current_dir)
 
 
 
@@ -104,13 +124,22 @@ parser_init.set_defaults(func=init)
 parser_init.add_argument('name', type=str, help='project name')
 
 # create parser for pull command
-parser_pull = subparsers.add_parser('pull', help='generates new atmel start project from configuration file')
-parser_pull.set_defaults(func=pull)
+parser_reconfigure = subparsers.add_parser('reconfigure',
+                                           help='Reconfigures the atmel start project using the configuration file')
+parser_reconfigure.set_defaults(func=reconfigure)
 
 # create parser for cmake command
 parser_cmake = subparsers.add_parser('cmake', help='creates cmake toolchain script for atmel start project')
 parser_cmake.set_defaults(func=cmake)
 
+# create parser for build command
+parser_build = subparsers.add_parser('build', help='build project')
+parser_build.set_defaults(func=build)
+
+
 # parse
 args = parser.parse_args()
-args.func(args)
+if hasattr(args, 'func'):
+    args.func(args)
+else:
+    parser.print_help()
