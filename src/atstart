@@ -9,19 +9,15 @@ import AtmelStart.project as project
 ATMEL_START_DIR_NAME = 'atstart'
 ATMEL_START_CONFIG_FILENAME = 'atmel_start_config.atstart'
 
-# argument parser
-parser = argparse.ArgumentParser(description='Atmel Start project tool')
-parser.add_argument('action', choices=['init', 'pull', 'cmake'])
-args = parser.parse_args()
 
 current_dir = os.getcwd()
 
 
-def init():
-    project.init(current_dir, 'TODO Project Name')
+def init(args):
+    project.init(current_dir, args.name)
 
 
-def pull():
+def generate(args):
     # check if configuration file exists
     atmel_start_config_filename = os.path.join(current_dir, ATMEL_START_CONFIG_FILENAME)
     atstart_dirname = os.path.join(current_dir, ATMEL_START_DIR_NAME)
@@ -31,7 +27,7 @@ def pull():
     project.retrieve_and_replace_project(atmel_start_config_filename, atstart_dirname)
 
 
-def cmake():
+def cmake(args):
     # find atstart directory
     atstart_dir = os.path.join(current_dir, ATMEL_START_DIR_NAME)
     if not os.path.exists(atstart_dir):
@@ -44,11 +40,27 @@ def cmake():
     Makefile.write_cmake_toolchain(makefile_filename, os.path.join(atstart_dir, 'toolchain.cmake'))
 
 
-if args.action == 'init':
-    init()
-elif args.action == 'pull':  # pull
-    pull()
-    cmake()
-elif args.action == 'cmake':  # cmake
-    cmake()
+def pull(args):
+    generate(args)
+    cmake(args)
 
+
+
+
+# argument parser
+parser = argparse.ArgumentParser(description='Atmel Start project tool')
+subparsers = parser.add_subparsers(help='sub-command help')
+
+# create parser for init command
+parser_init = subparsers.add_parser('init', help='initialize project')
+parser_init.set_defaults(func=init)
+parser_init.add_argument('name', type=str, help='project name')
+
+# create parser for pull command
+parser_pull = subparsers.add_parser('pull', help='generates new atmel start project from configuration file')
+parser_pull.set_defaults(func=pull)
+
+# create parser for cmake command
+parser_cmake = subparsers.add_parser('cmake', help='creates cmake toolchain script for atmel start project')
+parser_cmake.set_defaults(func=cmake)
+args = parser.parse_args()
