@@ -33,22 +33,29 @@ def init(project_directory, project_name):
     :param project_name: the project name
     :return:
     """
+    logger = logging.getLogger(__name__)
     # make src directory
     src_dirname = os.path.join(project_directory, SRC_DIR)
     if not os.path.isdir(src_dirname):
+        logging.info('Creating src/ directory...')
         os.mkdir(src_dirname)
+    else:
+        logging.warn('src/ directory already exists. Ignoring.')
 
     # generate CMakeLists.txt if not existing
     cmakelists_filename = os.path.join(project_directory, 'CMakeLists.txt')
     if os.path.isfile(cmakelists_filename):
-        raise Exception('CMakeLists.txt already exists.')
+        logger.error('CMakeLists.txt already exists.')
+        exit(-1)
     # Read, render and write template
+    logging.info('Generating CMakeLists.txt...')
     with open(os.path.join(os.path.dirname(__file__), '../templates/CMakeLists.txt'), 'r') as file:
         content = file.read()
     template = Template(content)
     cmakelists = template.render(project_name=project_name)
     with open(os.path.join(cmakelists_filename), 'w') as file:
         file.write(cmakelists)
+    logging.info('Successfully generated CMakeLists.txt')
 
 
 def edit(atmel_start_config_filename):
