@@ -57,6 +57,9 @@ def init(project_directory, project_name):
         file.write(cmakelists)
     logging.info('Successfully generated CMakeLists.txt')
 
+    # open Atmel start
+    webbrowser.open('https://start.atmel.com/#project')
+
 
 def edit(atmel_start_config_filename):
     """
